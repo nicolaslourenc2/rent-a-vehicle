@@ -1,7 +1,10 @@
-# Compiled class file
+# Compiled class files and build output
 *.class
+out/
+target/
+build/
 
-# Log file
+# Log files
 *.log
 
 # BlueJ files
@@ -10,7 +13,7 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+# Package files
 *.jar
 *.war
 *.nar
@@ -19,6 +22,18 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# IntelliJ IDEA (local/user-specific files across root and subprojects)
+**/.idea/shelf/
+**/.idea/workspace.xml
+**/.idea/httpRequests/
+**/.idea/queries/
+**/.idea/dataSources/
+**/.idea/dataSources.local.xml
+
+# OS generated files
+.DS_Store
+Thumbs.db
