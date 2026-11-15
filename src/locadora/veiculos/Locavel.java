@@ -1,4 +1,4 @@
-package locadora;
+package locadora.veiculos;
 
 public interface Locavel {
     void alugar();

@@ -1,4 +1,4 @@
-package locadora;
+package locadora.veiculos;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
