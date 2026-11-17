@@ -1,26 +1,54 @@
 package locadora.locacao;
 
+import locadora.persistencia.ArquivoLocadora;
 import locadora.veiculos.Carro;
 import locadora.veiculos.Moto;
 import locadora.veiculos.Veiculo;
 
 import java.math.BigDecimal;
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 
 /**
- * Demonstração via terminal das operações de clientes, veículos e locações (Partes 1 e 2).
+ * Demonstração via terminal com recuperação e salvamento dos dados (Partes 1, 2 e 3).
  */
 public class DemoLocadora {
     public static void main(String[] args) {
-        Locadora locadora = new Locadora();
-        carregarDadosDeExemplo(locadora);
+        ArquivoLocadora arquivo = new ArquivoLocadora(Paths.get("dados", "locadora.dat"));
+        Locadora locadora;
+        try {
+            locadora = arquivo.carregar();
+            System.out.println("Dados recuperados com sucesso.");
+        } catch (NoSuchFileException erro) {
+            locadora = new Locadora();
+            carregarDadosDeExemplo(locadora);
+            System.out.println("Primeira execução: dados de exemplo carregados.");
+            salvarDados(arquivo, locadora);
+        } catch (IOException | SecurityException erro) {
+            System.out.println("Não foi possível recuperar os dados: " + erro.getMessage());
+            System.out.println("Programa encerrado para preservar o arquivo existente.");
+            return;
+        }
         NumberFormat moeda = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
 
         try (Scanner entrada = new Scanner(System.in)) {
-            executarMenu(locadora, moeda, entrada);
+            executarMenu(locadora, moeda, entrada, arquivo);
+        }
+    }
+
+    private static boolean salvarDados(ArquivoLocadora arquivo, Locadora locadora) {
+        try {
+            arquivo.salvar(locadora);
+            return true;
+        } catch (IOException | SecurityException erro) {
+            System.out.println("Não foi possível salvar os dados: " + erro.getMessage());
+            System.out.println("As alterações estão apenas na memória. Use S para tentar salvar novamente antes de sair.");
+            return false;
         }
     }
 
@@ -38,7 +66,8 @@ public class DemoLocadora {
         locadora.cadastrarCliente("Bruno Costa", "(41) 98888-2222");
     }
 
-    private static void executarMenu(Locadora locadora, NumberFormat moeda, Scanner entrada) {
+    private static void executarMenu(Locadora locadora, NumberFormat moeda, Scanner entrada,
+                                     ArquivoLocadora arquivo) {
         while (true) {
             System.out.println("\n=== Locadora de Veículos ===");
             System.out.println("1 - Cadastrar cliente");
@@ -50,9 +79,11 @@ public class DemoLocadora {
             System.out.println("7 - Devolver veículo (por placa)");
             System.out.println("8 - Listar locações ativas");
             System.out.println("9 - Listar locações encerradas");
+            System.out.println("S - Salvar dados");
             System.out.println("0 - Sair");
             System.out.print("Opção: ");
             if (!entrada.hasNextLine()) {
+                salvarDados(arquivo, locadora);
                 return;
             }
 
@@ -60,6 +91,7 @@ public class DemoLocadora {
                 switch (entrada.nextLine().trim()) {
                     case "1":
                         cadastrarCliente(locadora, entrada);
+                        salvarDados(arquivo, locadora);
                         break;
                     case "2":
                         exibirClientes(locadora.listarClientes());
@@ -72,12 +104,15 @@ public class DemoLocadora {
                         break;
                     case "5":
                         realizarLocacao(locadora, moeda, entrada);
+                        salvarDados(arquivo, locadora);
                         break;
                     case "6":
                         devolverPorCodigo(locadora, entrada);
+                        salvarDados(arquivo, locadora);
                         break;
                     case "7":
                         devolverPorPlaca(locadora, entrada);
+                        salvarDados(arquivo, locadora);
                         break;
                     case "8":
                         exibirLocacoes(locadora.listarLocacoesAtivas(), moeda);
@@ -85,8 +120,15 @@ public class DemoLocadora {
                     case "9":
                         exibirLocacoes(locadora.listarLocacoesEncerradas(), moeda);
                         break;
+                    case "s":
+                    case "S":
+                        salvarDados(arquivo, locadora);
+                        break;
                     case "0":
-                        return;
+                        if (salvarDados(arquivo, locadora)) {
+                            return;
+                        }
+                        break;
                     default:
                         System.out.println("Opção inválida.");
                 }

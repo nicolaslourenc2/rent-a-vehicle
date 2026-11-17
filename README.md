@@ -28,7 +28,7 @@ Uma locadora precisa controlar sua frota de carros e motos, saber quais veículo
 - [x] Cálculo do valor do aluguel usando polimorfismo (`veiculo.calcularValor(dias)`) — **Parte 2**
 - [x] Registro de devolução (por código da locação ou placa) e liberação do veículo — **Parte 2**
 - [x] Listagem de locações ativas e encerradas — **Parte 2**
-- [ ] Persistência de objetos em arquivo (`ArquivoLocadora`) — **Parte 3**
+- [x] Persistência de objetos em arquivo (`ArquivoLocadora`) — **Parte 3**
 - [ ] Interface gráfica (Swing) integrada à `Locadora` — **Parte 4**
 
 ## Decisões de modelagem
@@ -48,8 +48,8 @@ Esta seção explica **por que** cada conceito de POO foi usado e qual problema 
 
 ## Recursos extras
 
-- [x] Tratamento de exceções (validações nas classes de domínio com `IllegalArgumentException` e `IllegalStateException`, a integrar com Parte 3 e Parte 4)
-- [ ] Persistência em arquivo (`Serializable` já preparado nas classes das Partes 1 e 2; `ArquivoLocadora` na Parte 3)
+- [x] Tratamento de exceções (validações nas classes de domínio com `IllegalArgumentException` e `IllegalStateException`, integradas ao menu; disponíveis para a Parte 4)
+- [x] Persistência em arquivo (`ArquivoLocadora`, com serialização da instância de `Locadora`)
 - [ ] Interface gráfica (Swing na Parte 4)
 
 ## Estrutura do projeto
@@ -79,7 +79,7 @@ rent-a-vehicle/
 └── README.md
 ```
 
-> Os pacotes `locadora.persistencia` (**Parte 3**) e `locadora.ui` (**Parte 4**) serão adicionados na mesma estrutura `src/locadora/`.
+> A Parte 3 está em `src/locadora/persistencia/ArquivoLocadora.java`. O pacote `locadora.ui` (Parte 4) poderá ser adicionado na mesma estrutura.
 
 ## Requisitos
 
@@ -94,9 +94,9 @@ git clone https://github.com/nicolaslourenc2/rent-a-vehicle.git
 cd rent-a-vehicle
 
 # 2. Compilar todo o projeto
-javac -encoding UTF-8 -d out src/locadora/veiculos/*.java src/locadora/locacao/*.java
+javac -encoding UTF-8 -d out src/locadora/veiculos/*.java src/locadora/locacao/*.java src/locadora/persistencia/*.java
 
-# 3. Executar a demonstração completa (Partes 1 e 2)
+# 3. Executar a demonstração completa (Partes 1, 2 e 3)
 java -cp out locadora.locacao.DemoLocadora
 
 # (Opcional) Executar apenas a demo isolada da Parte 1
@@ -145,12 +145,34 @@ Relaciona clientes aos veículos do catálogo, gera códigos sequenciais automat
 | `7` | Devolve um veículo informando a placa. |
 | `8` | Lista as locações ativas. |
 | `9` | Lista as locações encerradas. |
-| `0` | Encerra o programa. |
+| `S` | Salva os dados ou tenta novamente após uma falha de gravação. |
+| `0` | Salva os dados e encerra; se a gravação falhar, mantém o menu aberto. |
 
 ### Integração com as Partes 3 e 4
 
-- **Parte 3 (Persistência e Exceções):** Todas as classes de domínio (`Locadora`, `CatalogoVeiculos`, `Veiculo`, `Carro`, `Moto`, `Cliente`, `Locacao` e `SituacaoLocacao`) implementam `Serializable`. Basta serializar a instância única de `Locadora` em `ArquivoLocadora`. As regras de negócio já lançam `IllegalArgumentException` (dados inválidos, placa duplicada, cliente/veículo/locação não encontrados) e `IllegalStateException` (veículo já alugado, devolução de locação já encerrada).
+- **Parte 3 (Persistência e Exceções):** Todas as classes de domínio (`Locadora`, `CatalogoVeiculos`, `Veiculo`, `Carro`, `Moto`, `Cliente`, `Locacao` e `SituacaoLocacao`) implementam `Serializable`. `ArquivoLocadora` serializa a instância única de `Locadora`, preservando as referências entre objetos e os contadores de códigos. As regras de negócio já lançam `IllegalArgumentException` (dados inválidos, placa duplicada, cliente/veículo/locação não encontrados) e `IllegalStateException` (veículo já alugado, devolução de locação já encerrada).
 - **Parte 4 (Interface Gráfica Swing):** As telas devem manter uma instância de `Locadora` e chamar `cadastrarCliente`, `listarClientes`, `cadastrarVeiculo`, `listarVeiculos`, `listarVeiculosDisponiveis`, `realizarLocacao`, `listarLocacoesAtivas` e `devolverLocacao`, exibindo as mensagens de exceção sem duplicar regras de cálculo na interface.
+
+## Parte 3 — Salvamento dos dados e tratamento de exceções
+
+`ArquivoLocadora`, no pacote `locadora.persistencia`, oferece `salvar(Locadora)` e `carregar()`, recebendo um `Path` no construtor. A serialização inclui clientes, carros, motos, locações ativas e encerradas, disponibilidade e próximos códigos.
+
+A `DemoLocadora` utiliza `dados/locadora.dat`, relativo ao diretório em que o programa é executado. Execute sempre a partir da pasta do projeto para reutilizar os mesmos dados. Os exemplos são criados somente quando o arquivo não existe. O menu salva após cadastros de clientes, locações e devoluções, na opção S e ao sair (inclusive no fim da entrada). A demonstração isolada `DemoVeiculos` continua independente, sem persistência.
+
+A gravação usa um temporário no mesmo diretório e uma substituição atômica para evitar arquivos parcialmente gravados. Se a operação não for suportada ou ocorrer outra falha de gravação, o menu informa que as alterações permanecem apenas na memória e permite tentar novamente com S. Na opção 0, uma falha mantém o menu aberto; se a entrada já terminou, não é possível oferecer nova tentativa. Arquivos corrompidos, incompatíveis ou sem permissão de leitura geram uma mensagem e encerramento controlado, sem sobrescrever os dados existentes. Corrija o acesso ou restaure um backup antes de reiniciar. Use apenas arquivos de dados produzidos pela aplicação.
+
+As regras continuam nas classes responsáveis: `Locacao` e `Veiculo` validam os dias; `Veiculo` impede aluguel duplicado; `CatalogoVeiculos` impede placa duplicada; `Locacao` impede devolução repetida. O menu captura `IllegalArgumentException`, `IllegalStateException` e entradas numéricas inválidas e continua funcionando. A persistência propaga `IOException`, tratada pela interface, sem concentrar regras de negócio.
+
+Para integrar uma futura interface, carregue uma única instância de `Locadora` ao iniciar e salve essa mesma instância após as operações. Diferencie `NoSuchFileException` (primeiro uso) de outras falhas de leitura; não substitua dados existentes por uma locadora vazia quando a leitura falhar.
+
+### Testes sem bibliotecas externas
+
+```powershell
+javac -encoding UTF-8 -d out src/locadora/veiculos/*.java src/locadora/locacao/*.java src/locadora/persistencia/*.java tests/locadora/*.java
+java -cp out locadora.PersistenciaTest
+```
+
+Os testes verificam recuperação e atualização do arquivo, referências compartilhadas, histórico, disponibilidade, valores e códigos sequenciais; dias inválidos, aluguel duplicado, placa duplicada e devolução repetida; arquivo ausente, corrompido, objeto de tipo incorreto e falha de gravação. Os arquivos de teste são temporários e removidos ao final.
 
 ## Licença
 
