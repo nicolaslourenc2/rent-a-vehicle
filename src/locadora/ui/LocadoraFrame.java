@@ -26,7 +26,11 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JComponent;
+import javax.swing.JViewport;
 import javax.swing.ListSelectionModel;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -36,7 +40,11 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -83,13 +91,13 @@ final class LocadoraFrame extends JFrame {
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         setMinimumSize(new Dimension(820, 580));
-        setSize(1050, 700);
+        setSize(1060, 720);
         setLocationRelativeTo(null);
         setJMenuBar(criarMenu());
 
-        JPanel conteudo = new JPanel(new BorderLayout(0, 20));
+        JPanel conteudo = new JPanel(new BorderLayout(0, 14));
         conteudo.setBackground(FUNDO);
-        conteudo.setBorder(BorderFactory.createEmptyBorder(24, 28, 24, 28));
+        conteudo.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
         conteudo.add(criarCabecalho(), BorderLayout.NORTH);
 
         JTabbedPane abas = new JTabbedPane();
@@ -115,7 +123,7 @@ final class LocadoraFrame extends JFrame {
     }
 
     private JPanel criarCabecalho() {
-        JPanel cabecalho = new JPanel(new BorderLayout(0, 18));
+        JPanel cabecalho = new JPanel(new BorderLayout(0, 12));
         cabecalho.setOpaque(false);
 
         JLabel titulo = new JLabel("Locadora de veículos");
@@ -147,7 +155,7 @@ final class LocadoraFrame extends JFrame {
         cartao.setBackground(SUPERFICIE);
         cartao.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDA),
-                BorderFactory.createEmptyBorder(10, 14, 10, 14)));
+                BorderFactory.createEmptyBorder(8, 14, 8, 14)));
 
         JLabel rotulo = new JLabel(titulo);
         rotulo.setFont(new Font("SansSerif", Font.PLAIN, 12));
@@ -238,6 +246,8 @@ final class LocadoraFrame extends JFrame {
                 placa.setText("");
                 modelo.setText("");
                 diaria.setText("");
+            } catch (NumberFormatException erro) {
+                exibirErro("Informe um valor numérico válido para a diária.");
             } catch (IllegalArgumentException erro) {
                 exibirErro(erro);
             }
@@ -281,6 +291,8 @@ final class LocadoraFrame extends JFrame {
                 salvarAposOperacao("Locação #" + locacao.getCodigo() + " registrada. Total: "
                         + moeda.format(locacao.getValorTotal()) + ".");
                 dias.setText("");
+            } catch (NumberFormatException erro) {
+                exibirErro("Informe um número inteiro válido para a quantidade de dias.");
             } catch (IllegalArgumentException | IllegalStateException erro) {
                 exibirErro(erro);
             }
@@ -313,7 +325,7 @@ final class LocadoraFrame extends JFrame {
     private JPanel criarPainelAba() {
         JPanel painel = new JPanel(new BorderLayout(18, 18));
         painel.setBackground(FUNDO);
-        painel.setBorder(BorderFactory.createEmptyBorder(16, 8, 8, 8));
+        painel.setBorder(BorderFactory.createEmptyBorder(12, 6, 6, 6));
         return painel;
     }
 
@@ -331,42 +343,144 @@ final class LocadoraFrame extends JFrame {
         rotulo.setAlignmentX(Component.LEFT_ALIGNMENT);
         campo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel linha = new JPanel(new BorderLayout(0, 7));
+        JPanel linha = new JPanel(new BorderLayout(0, 5));
         linha.setOpaque(false);
         linha.add(rotulo, BorderLayout.NORTH);
         linha.add(campo, BorderLayout.CENTER);
-        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 66));
+        linha.setMinimumSize(new Dimension(120, 56));
+        linha.setPreferredSize(new Dimension(220, 56));
+        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
         campos.add(linha);
-        campos.add(javax.swing.Box.createVerticalStrut(16));
+        campos.add(javax.swing.Box.createVerticalStrut(10));
     }
 
     private JPanel criarCartaoFormulario(String titulo, String descricao, JPanel campos, JButton botao) {
         JPanel cartao = criarCartao();
-        cartao.setPreferredSize(new Dimension(310, 100));
+        cartao.setPreferredSize(new Dimension(320, 100));
 
-        JPanel conteudo = new JPanel(new BorderLayout(0, 22));
+        JPanel conteudo = new PainelFormularioRolavel();
         conteudo.setOpaque(false);
+        conteudo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 4));
         conteudo.add(criarTitulosCartao(titulo, descricao), BorderLayout.NORTH);
         conteudo.add(campos, BorderLayout.CENTER);
         conteudo.add(botao, BorderLayout.SOUTH);
-        cartao.add(conteudo, BorderLayout.CENTER);
+
+        JScrollPane rolagem = new JScrollPane(conteudo,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        rolagem.setBorder(BorderFactory.createEmptyBorder());
+        rolagem.setOpaque(false);
+        rolagem.getViewport().setBackground(SUPERFICIE);
+        configurarRolagemModerna(rolagem);
+
+        cartao.add(rolagem, BorderLayout.CENTER);
         return cartao;
+    }
+
+    private static final class PainelFormularioRolavel extends JPanel implements Scrollable {
+        PainelFormularioRolavel() {
+            super(new BorderLayout(0, 14));
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(java.awt.Rectangle visivel, int orientacao, int direcao) {
+            return 16;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(java.awt.Rectangle visivel, int orientacao, int direcao) {
+            return orientacao == SwingConstants.VERTICAL ? Math.max(visivel.height - 32, 32) : visivel.width;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return getParent() instanceof JViewport
+                    && getParent().getHeight() > getPreferredSize().height;
+        }
     }
 
     private JPanel criarCartaoTabela(String titulo, String descricao, JTable tabela) {
         JPanel cartao = criarCartao();
         prepararTabela(tabela);
 
-        JPanel conteudo = new JPanel(new BorderLayout(0, 16));
+        JPanel conteudo = new JPanel(new BorderLayout(0, 14));
         conteudo.setOpaque(false);
         conteudo.add(criarTitulosCartao(titulo, descricao), BorderLayout.NORTH);
 
         JScrollPane rolagem = new JScrollPane(tabela);
         rolagem.setBorder(BorderFactory.createLineBorder(BORDA));
         rolagem.getViewport().setBackground(SUPERFICIE);
+        configurarRolagemModerna(rolagem);
         conteudo.add(rolagem, BorderLayout.CENTER);
         cartao.add(conteudo, BorderLayout.CENTER);
         return cartao;
+    }
+
+    private static void configurarRolagemModerna(JScrollPane rolagem) {
+        rolagem.getVerticalScrollBar().setUnitIncrement(16);
+        rolagem.getVerticalScrollBar().setPreferredSize(new Dimension(8, 0));
+        rolagem.getVerticalScrollBar().setOpaque(false);
+        rolagem.getVerticalScrollBar().setUI(new BarraRolagemModerna());
+        rolagem.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 8));
+        rolagem.getHorizontalScrollBar().setOpaque(false);
+        rolagem.getHorizontalScrollBar().setUI(new BarraRolagemModerna());
+    }
+
+    private static final class BarraRolagemModerna extends BasicScrollBarUI {
+        @Override
+        protected void configureScrollBarColors() {
+            thumbColor = new Color(0xC5D0DE);
+            trackColor = SUPERFICIE;
+        }
+
+        @Override
+        protected JButton createDecreaseButton(int orientacao) {
+            return criarBotaoInvisivel();
+        }
+
+        @Override
+        protected JButton createIncreaseButton(int orientacao) {
+            return criarBotaoInvisivel();
+        }
+
+        private static JButton criarBotaoInvisivel() {
+            JButton botao = new JButton();
+            Dimension zero = new Dimension(0, 0);
+            botao.setPreferredSize(zero);
+            botao.setMinimumSize(zero);
+            botao.setMaximumSize(zero);
+            return botao;
+        }
+
+        @Override
+        protected void paintTrack(Graphics grafico, JComponent componente, Rectangle limitesTrilha) {
+            grafico.setColor(SUPERFICIE);
+            grafico.fillRect(limitesTrilha.x, limitesTrilha.y, limitesTrilha.width, limitesTrilha.height);
+        }
+
+        @Override
+        protected void paintThumb(Graphics grafico, JComponent componente, Rectangle limitesBarra) {
+            if (limitesBarra.isEmpty() || !scrollbar.isEnabled()) {
+                return;
+            }
+            Graphics2D g2 = (Graphics2D) grafico.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(isDragging ? new Color(0x65758B)
+                    : isThumbRollover() ? new Color(0x8FA0B5) : new Color(0xC5D0DE));
+            g2.fillRoundRect(limitesBarra.x + 1, limitesBarra.y + 2,
+                    Math.max(limitesBarra.width - 2, 4), Math.max(limitesBarra.height - 4, 8), 8, 8);
+            g2.dispose();
+        }
     }
 
     private JPanel criarCartaoInformativo(String titulo, String descricao) {
@@ -381,12 +495,12 @@ final class LocadoraFrame extends JFrame {
         cartao.setBackground(SUPERFICIE);
         cartao.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDA),
-                BorderFactory.createEmptyBorder(22, 22, 22, 22)));
+                BorderFactory.createEmptyBorder(18, 20, 18, 20)));
         return cartao;
     }
 
     private JPanel criarTitulosCartao(String titulo, String descricao) {
-        JPanel textos = new JPanel(new GridLayout(0, 1, 0, 6));
+        JPanel textos = new JPanel(new GridLayout(0, 1, 0, 5));
         textos.setOpaque(false);
         JLabel tituloLabel = new JLabel(titulo);
         tituloLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
@@ -407,17 +521,19 @@ final class LocadoraFrame extends JFrame {
         campo.setCaretColor(DESTAQUE);
         campo.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDA),
-                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-        campo.setPreferredSize(new Dimension(220, 38));
-        campo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+                BorderFactory.createEmptyBorder(7, 10, 7, 10)));
+        campo.setMinimumSize(new Dimension(120, 36));
+        campo.setPreferredSize(new Dimension(220, 36));
+        campo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
     }
 
     private void prepararCombo(JComboBox<?> combo) {
         combo.setFont(new Font("SansSerif", Font.PLAIN, 13));
         combo.setForeground(TEXTO);
         combo.setBackground(SUPERFICIE);
-        combo.setPreferredSize(new Dimension(220, 38));
-        combo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        combo.setMinimumSize(new Dimension(120, 36));
+        combo.setPreferredSize(new Dimension(220, 36));
+        combo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
     }
 
     private void prepararBotao(JButton botao) {
