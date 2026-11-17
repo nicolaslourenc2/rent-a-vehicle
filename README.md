@@ -10,6 +10,8 @@ Sistema de locadora de veículos desenvolvido como **projeto final da disciplina
 | Laura Zoffoli Silveira | [@Laura-zs](https://github.com/Laura-zs) | Parte 4 — Interface gráfica |
 | Nicolas Lourenço | [@nicolaslourenc2](https://github.com/nicolaslourenc2) | Parte 2 — Clientes e controle das locações |
 | Rauhan Kniess de Moura | [@RAUHANKM](https://github.com/RAUHANKM) | Parte 3 - Persistência e exceções |
+
+
 **Disciplina:** Programação Orientada a Objetos  
 **Instituição:** _Pontifícia Universidade Católica do Paraná_  
 **Professora:** _Marina de Lara_
