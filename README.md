@@ -6,11 +6,10 @@ Sistema de locadora de veículos desenvolvido como **projeto final da disciplina
 
 | Nome | GitHub | Parte |
 |------|--------|-------|
-| Isaque dos Reis Jess | [@usuario1](https://github.com/usuario1) | Parte 1 — Veículos e regras de cobrança |
-| Laura Zoffoli Silveira | [@usuario2](https://github.com/usuario2) | _(definir)_ |
+| Isaque dos Reis Jess | [@isaquereis3-ui](https://github.com/isaquereis3-ui) | Parte 1 — Veículos e regras de cobrança |
+| Laura Zoffoli Silveira | [@Laura-zs](https://github.com/Laura-zs) | Parte 4 — Interface gráfica |
 | Nicolas Lourenço | [@nicolaslourenc2](https://github.com/nicolaslourenc2) | Parte 2 — Clientes e controle das locações |
-| Rauhan Kniess de Moura | [@usuario3](https://github.com/usuario3) | _(definir)_ |
-
+| Rauhan Kniess de Moura | [@RAUHANKM](https://github.com/RAUHANKM) | Parte 3 - Persistência e exceções |
 **Disciplina:** Programação Orientada a Objetos  
 **Instituição:** _Pontifícia Universidade Católica do Paraná_  
 **Professora:** _Marina de Lara_
@@ -29,7 +28,7 @@ Uma locadora precisa controlar sua frota de carros e motos, saber quais veículo
 - [x] Registro de devolução (por código da locação ou placa) e liberação do veículo — **Parte 2**
 - [x] Listagem de locações ativas e encerradas — **Parte 2**
 - [x] Persistência de objetos em arquivo (`ArquivoLocadora`) — **Parte 3**
-- [ ] Interface gráfica (Swing) integrada à `Locadora` — **Parte 4**
+- [x] Interface gráfica (Swing) integrada à `Locadora` — **Parte 4**
 
 ## Decisões de modelagem
 
@@ -50,7 +49,7 @@ Esta seção explica **por que** cada conceito de POO foi usado e qual problema 
 
 - [x] Tratamento de exceções (validações nas classes de domínio com `IllegalArgumentException` e `IllegalStateException`, integradas ao menu; disponíveis para a Parte 4)
 - [x] Persistência em arquivo (`ArquivoLocadora`, com serialização da instância de `Locadora`)
-- [ ] Interface gráfica (Swing na Parte 4)
+- [x] Interface gráfica (Swing na Parte 4)
 
 ## Estrutura do projeto
 
@@ -67,19 +66,24 @@ rent-a-vehicle/
 │       │   ├── Moto.java
 │       │   ├── CatalogoVeiculos.java
 │       │   └── DemoVeiculos.java
-│       └── locacao/               # Parte 2 — Clientes e controle das locações
-│           ├── Cliente.java
-│           ├── SituacaoLocacao.java
-│           ├── Locacao.java
-│           ├── Locadora.java
-│           └── DemoLocadora.java
+│       ├── locacao/               # Parte 2 — Clientes e controle das locações
+│       │   ├── Cliente.java
+│       │   ├── SituacaoLocacao.java
+│       │   ├── Locacao.java
+│       │   ├── Locadora.java
+│       │   └── DemoLocadora.java
+│       ├── persistencia/          # Parte 3 — Persistência em arquivo
+│       │   └── ArquivoLocadora.java
+│       └── ui/                    # Parte 4 — Interface gráfica Swing
+│           ├── InterfaceLocadora.java
+│           └── LocadoraFrame.java
 ├── .gitignore
 ├── LICENSE
 ├── rent-a-vehicle.iml
 └── README.md
 ```
 
-> A Parte 3 está em `src/locadora/persistencia/ArquivoLocadora.java`. O pacote `locadora.ui` (Parte 4) poderá ser adicionado na mesma estrutura.
+> A interface gráfica e a demonstração de terminal compartilham as regras de negócio e o arquivo `dados/locadora.dat`.
 
 ## Requisitos
 
@@ -94,12 +98,15 @@ git clone https://github.com/nicolaslourenc2/rent-a-vehicle.git
 cd rent-a-vehicle
 
 # 2. Compilar todo o projeto
-javac -encoding UTF-8 -d out src/locadora/veiculos/*.java src/locadora/locacao/*.java src/locadora/persistencia/*.java
+javac -encoding UTF-8 -d out src/locadora/veiculos/*.java src/locadora/locacao/*.java src/locadora/persistencia/*.java src/locadora/ui/*.java
 
 # 3. Executar a demonstração completa (Partes 1, 2 e 3)
 java -cp out locadora.locacao.DemoLocadora
 
-# (Opcional) Executar apenas a demo isolada da Parte 1
+# (Alternativa) Iniciar a interface gráfica Swing
+java -cp out locadora.ui.InterfaceLocadora
+
+# (Opcional) Executar apenas a demonstração isolada da Parte 1
 java -cp out locadora.veiculos.DemoVeiculos
 ```
 
@@ -151,7 +158,19 @@ Relaciona clientes aos veículos do catálogo, gera códigos sequenciais automat
 ### Integração com as Partes 3 e 4
 
 - **Parte 3 (Persistência e Exceções):** Todas as classes de domínio (`Locadora`, `CatalogoVeiculos`, `Veiculo`, `Carro`, `Moto`, `Cliente`, `Locacao` e `SituacaoLocacao`) implementam `Serializable`. `ArquivoLocadora` serializa a instância única de `Locadora`, preservando as referências entre objetos e os contadores de códigos. As regras de negócio já lançam `IllegalArgumentException` (dados inválidos, placa duplicada, cliente/veículo/locação não encontrados) e `IllegalStateException` (veículo já alugado, devolução de locação já encerrada).
-- **Parte 4 (Interface Gráfica Swing):** As telas devem manter uma instância de `Locadora` e chamar `cadastrarCliente`, `listarClientes`, `cadastrarVeiculo`, `listarVeiculos`, `listarVeiculosDisponiveis`, `realizarLocacao`, `listarLocacoesAtivas` e `devolverLocacao`, exibindo as mensagens de exceção sem duplicar regras de cálculo na interface.
+- **Parte 4 (Interface Gráfica Swing):** `InterfaceLocadora` e `LocadoraFrame`, em `locadora.ui`, mantêm uma instância de `Locadora` e chamam suas operações de cadastro, listagem, locação e devolução, exibindo mensagens de validação sem duplicar regras de cálculo.
+
+## Parte 4 — Interface gráfica (`locadora.ui`)
+
+A `InterfaceLocadora` inicia a aplicação Swing. A janela oferece abas para cadastro e listagem de clientes e veículos, registro de locações e devolução das locações ativas. O total da locação é obtido do objeto `Locacao` retornado pelas regras do domínio; a interface não repete o cálculo.
+
+As operações bem-sucedidas atualizam as tabelas e seleções e salvam a instância compartilhada de `Locadora` em `dados/locadora.dat`. Se o arquivo ainda não existir, a interface começa com os cadastros vazios. Erros de validação são exibidos na tela; falhas de persistência também são informadas, e alterações ainda não salvas podem ser tentadas novamente pelo menu **Arquivo > Salvar agora**.
+
+Execute a partir da pasta do projeto:
+
+```powershell
+java -cp out locadora.ui.InterfaceLocadora
+```
 
 ## Parte 3 — Salvamento dos dados e tratamento de exceções
 
@@ -163,12 +182,12 @@ A gravação usa um temporário no mesmo diretório e uma substituição atômic
 
 As regras continuam nas classes responsáveis: `Locacao` e `Veiculo` validam os dias; `Veiculo` impede aluguel duplicado; `CatalogoVeiculos` impede placa duplicada; `Locacao` impede devolução repetida. O menu captura `IllegalArgumentException`, `IllegalStateException` e entradas numéricas inválidas e continua funcionando. A persistência propaga `IOException`, tratada pela interface, sem concentrar regras de negócio.
 
-Para integrar uma futura interface, carregue uma única instância de `Locadora` ao iniciar e salve essa mesma instância após as operações. Diferencie `NoSuchFileException` (primeiro uso) de outras falhas de leitura; não substitua dados existentes por uma locadora vazia quando a leitura falhar.
+Na interface gráfica, `NoSuchFileException` indica o primeiro uso e inicia uma locadora vazia; outras falhas de leitura são informadas sem substituir os dados existentes.
 
 ### Testes sem bibliotecas externas
 
 ```powershell
-javac -encoding UTF-8 -d out src/locadora/veiculos/*.java src/locadora/locacao/*.java src/locadora/persistencia/*.java tests/locadora/*.java
+javac -encoding UTF-8 -d out src/locadora/veiculos/*.java src/locadora/locacao/*.java src/locadora/persistencia/*.java src/locadora/ui/*.java tests/locadora/*.java
 java -cp out locadora.PersistenciaTest
 ```
 
